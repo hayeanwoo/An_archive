@@ -1,0 +1,466 @@
+﻿
+
+var stats;
+var img;
+var stat;
+var img2;
+var locationData;
+var pos2;
+var size=0;
+var rand;
+
+var img_s;
+var img_p;
+var size_red = 0;
+var gap = 0 ;
+var stat_of_routine1 ;
+var stat_of_routine2 ;
+
+	LAT=37.54006;//37.53906
+    LON=127.08686;
+
+function preload() 
+{
+	stats = loadTable("CCTV.csv");
+	img = loadImage("CCTV.png");
+	stat = loadTable("SafeHouse.csv");
+	img2= loadImage("SafeHouse.png"); 
+	locationData =  getCurrentPosition();
+	img_s = loadImage("Siren.png");
+	img_p = loadImage("Person.png");
+	
+	/////////////////////////////////////파일 이름 수정하기!!!!
+	if (LAT == 37.54006) // 안쪽일때
+	{	
+		stat_of_routine1 = loadTable("Route3.csv");	// 파일 이름 가장 가까운 집
+		stat_of_routine2 = loadTable("Route4.csv");	// 파일 이름 두번째로(?) 가까운 집
+	}
+	else if (LAT == 37.53906) // 모서리일때 // 변두리일때
+	{
+		stat_of_routine1 = loadTable("Route1.csv");	// 파일 이름 가장 가까운 집
+		stat_of_routine2 = loadTable("Route2.csv");	// 파일 이름 두번째로(?) 가까운 집
+	}
+}
+
+function Find_CCTV()
+{
+	var min;
+	var min_index;
+	var x;
+	var y;
+	var lat=LAT;//locationData.latitude;
+	var long=LON;//locationData.longitude;
+	var rowCount = stats.getRowCount();
+	var a = [];
+	var b = [];
+	var c = [];
+	var d= [];
+	//print (lat,long);
+
+	for (i = 0; i < rowCount; i++) {//37.54006,127.08686
+		a[i] = stats.getNum(i, 0);
+		b[i] = stats.getNum(i, 1);
+		if(lat>a[i])
+		{
+			x=lat-a[i];
+		}
+		else
+		{
+			x= a[i]-lat;
+		}
+		if(long>b[i])
+		{
+			y= long-b[i];
+		}	
+		else
+		{
+			y=b[i]-long;
+		}
+		if(i==0)
+		{
+			min=x+y;
+			min_index=i;
+		}
+		if(min>(x+y))
+		{
+			min=x+y;
+			min_index=i;
+		}
+  } 
+  return min_index;
+}
+
+function Find_SAFE()
+{
+	var min;
+	var min_index;
+	var x;
+	var y;
+	var lat=LAT;//locationData.latitude;
+	var long=LON;//locationData.longitude;
+	var rowCount = stat.getRowCount();
+	var a = [];
+	var b = [];
+	var c = [];
+	var d= [];
+	//print (lat,long);
+
+	for (i = 0; i < rowCount; i++) {//37.54006,127.08686
+		a[i] = stat.getNum(i, 0);
+		b[i] = stat.getNum(i, 1);
+		if(lat>a[i])
+		{
+			x=lat-a[i];
+		}
+		else
+		{
+			x= a[i]-lat;
+		}
+		if(long>b[i])
+		{
+			y= long-b[i];
+		}
+		else
+		{
+			y=b[i]-long;
+		}	
+		if(i==0)
+		{
+			min=x+y;
+			min_index=i;
+		}
+		if(min>(x+y))
+		{
+			min=x+y;
+			min_index=i;
+		}
+	}
+	//print(min_index); 
+	return min_index;
+}
+
+function Find_Way()  // 길찾기 함수
+{
+	
+	var lat=LAT;//locationData.latitude;
+	var long=LON;//locationData.longitude;
+	
+	var rowCount1 = stat_of_routine1.getRowCount();
+	var rowCount2 = stat_of_routine2.getRowCount();
+	
+	var a = [];
+	var b = [];
+	
+	var c = [];
+	var d = [];
+	
+	//print (lat,long);
+
+	for (i = 0; i < rowCount1; i++) 
+	{		//첫번째 경로
+		a[i] = stat_of_routine1.getNum(i, 0);
+		b[i] = stat_of_routine1.getNum(i, 1);
+	
+		if ( i > 0 ) // 지도 점 연결해서 길 만들기
+		{
+			const pos_1 = myMap.latLngToPixel(a[i-1], b[i-1]);
+			const pos_2 = myMap.latLngToPixel(a[i], b[i]);
+			
+			strokeWeight(5);
+			
+			fill(0,0,255);
+			line(pos_1.x, pos_1.y, pos_2.x, pos_2.y) ; // 선 잇기
+			
+		}	
+	} 
+	for (i = 0; i < rowCount2; i++) //두번째 경로
+	{
+		c[i] = stat_of_routine2.getNum(i, 0);
+		d[i] = stat_of_routine2.getNum(i, 1);
+	
+		if ( i > 0 ) // 지도 점 연결해서 길 만들기
+		{
+			const pos_3 = myMap.latLngToPixel(c[i-1], d[i-1]);
+			const pos_4 = myMap.latLngToPixel(c[i], d[i]);
+			
+			strokeWeight(5);
+			fill(255,133,0);
+			line(pos_3.x, pos_3.y, pos_4.x, pos_4.y) ; // 선 잇기
+			
+		}	
+	} 
+	strokeWeight(1);
+}
+
+function drawImage(size,size_red,gap) {
+
+   rand=random(20);
+   LAT=37.53906  //37.54006;
+  
+   // Clear the canvas
+   var CCTV_index=Find_CCTV();
+   var SAFE_index=Find_SAFE();
+   // ellipse(-pos1.x,-pos1.y,5,5);
+   clear();
+
+  
+   var rowCount = stats.getRowCount();
+   var rowCounts=stat.getRowCount();
+   var a = [];
+   var b = [];
+   var c = [];
+   var d= [];
+   var n;
+   var dis1;
+   var dis2;
+  
+   for (i = 0; i < rowCount; i++) {      // CCTV 표시
+      a[i] = stats.getNum(i, 0);
+      b[i] = stats.getNum(i, 1);
+    
+
+      const pos = myMap.latLngToPixel(a[i], b[i]);
+
+
+      if(i==CCTV_index)
+      {
+         if(LON>b[i])
+      {
+         n=LON-b[i];
+      }
+         else
+      {
+         n=b[i]-LON;
+      }textFont('Georgia');
+      //CCTV
+      fill(0);
+      textSize(25);
+      dis2=int(6317*acos(sin(radians(a[i]))*sin(radians(LAT))+cos(radians(a[i]))*cos(radians(LAT))*cos(radians(n)))*1000);
+
+      image(img, pos.x, pos.y,50,50) ;
+  
+      }
+      else
+      {
+      image(img, pos.x, pos.y, 20,20) ;
+      }
+      
+
+   }
+
+  
+  
+   for (i = 0; i < rowCounts; i++) {
+      c[i] = stat.getNum(i, 0);
+      d[i] = stat.getNum(i, 1);
+    
+
+      const poss = myMap.latLngToPixel(c[i], d[i]);
+
+      if(i==SAFE_index)
+      {
+         if(LON>d[i])
+         {
+            n=LON-d[i];
+         }
+         else
+         {
+            n=d[i]-LON;
+         }//37.54006,127.08686
+         dis1=int(6317*acos(sin(radians(c[i]))*sin(radians(LAT))+cos(radians(c[i]))*cos(radians(LAT))*cos(radians(n)))*1000);
+
+  
+
+         image(img2, poss.x, poss.y, 50,50) ;
+      }
+      else
+      {
+            image(img2, poss.x, poss.y, 20,20) ;
+      }
+   }
+  
+    
+  ///////////////// 거리표시
+    
+	strokeWeight(4);
+	stroke(127,126,255,255);
+	rect(50,25,250,60);
+	stroke(0);
+	
+	
+	fill(127,126,255,255);
+    text("CCTV 거리(m):",50,50);
+	text(dis2,220,50);
+    text("여성안전 거리(m):" ,50,80);
+	text(dis1,260,80);
+	fill(0);
+    strokeWeight(1);
+  /////////////////////////
+  
+   const nigeria = myMap.latLngToPixel(locationData.latitude,locationData.longitude); 
+   const wich = myMap.latLngToPixel(37.53906,127.08686); //원 위치
+   const subwich= myMap.latLngToPixel(LAT,LON); //나 위치
+   
+   
+   //print(nigeria.x, nigeria.y, 20, 20);
+   
+   fill(171,242,0);
+   //현재 위치 ellipse(nigeria.x, nigeria.y, 20, 20);
+noStroke();
+    fill(224+rand,255,139+rand*4);
+    ellipse(subwich.x, subwich.y, 20+size, 20+size);
+    
+  
+
+   noStroke();
+  //반지름 위도와  0.01 차이
+  
+   fill(0);
+
+
+
+  
+  
+  /*
+  /////////////////////////////////////////////////////////
+   if(locationData.longitude>127.08686)
+   {
+      n=locationData.longitude-127.08686;
+   }
+   else
+   {
+      n=127.08686-locationData.longitude;//경도
+   }
+   */
+   
+   
+   
+   //0.11025249312195555
+  
+   if(LON>127.08686)      // 경도가 숫자보다 크다면
+   {
+      n=LON-127.08686;
+   }
+   else
+   {
+      n=127.08686-LON;//경도
+   }
+   
+   //  print("원 거리",6317*acos(sin(radians(37.53906))*sin(radians(locationData.latitude))+cos(radians(37.53906))*cos(radians(locationData.latitude))*cos(radians(n))));
+  
+         if(0.0551262465609778>=6317*acos(sin(radians(37.53906))*sin(radians(LAT))+cos(radians(37.53906))*cos(radians(LAT))*cos(radians(n))))
+   {
+       // print("우범지역 들어옴");
+     //떠는 여자 표시 &경고등
+        
+        fill(255,0,0, 150)
+        ellipse(630,120, 100+size_red, 100+size_red);
+        image(img_s, 580, 70, 100,100) ;    // 경고등 이미지
+    
+        image(img_p, 450+gap, 70, 100,100) ;    // 떠는 여자 이미지
+   }
+   else   if(0.11025249312195555>=6317*acos(sin(radians(37.53906))*sin(radians(LAT))+cos(radians(37.53906))*cos(radians(LAT))*cos(radians(n))))
+   {
+    //  print("절반 들어옴");
+      //경고등표시
+      fill(255,0,255)
+       // ellipse(580,70, 150, 150);
+      fill(0);
+      image(img_s, 580, 70, 100,100) ;
+       //image(img_p, 455, 70, 100,100) ;    // 떠는 여자 이미지
+   }
+   
+   else
+   {
+   }
+  
+   // print("원 거리",6317*acos(sin(radians(37.53906))*sin(radians(37.54006))+cos(radians(37.53906))*cos(radians(37.54006))*cos(radians(n))));
+   ////////////////////우범지역     37.53906,127.08686 
+   
+   for (let i = 10; i > 0; i--) {
+      fill(10 + i *2 * 10, 10,10,40);
+      circle(wich.x, wich.y, 10 + i * 10);
+   }
+   
+   ///////////////////
+  
+
+}
+
+
+
+let myMap;
+let canvas;
+const mappa = new Mappa('Leaflet');
+
+/*
+let a =locationData.latitude;
+let b = locationData.longitude;
+*/
+
+
+function setup(){
+
+  canvas = createCanvas(750,1300);
+
+  //ellipse(100,100,100,100);
+ 
+   const options = {
+      lat: 37.53906,//locationData.latitude,
+      lng: 127.08686,//locationData.longitude,
+      zoom: 17,
+      style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png" 
+   }
+
+  
+   myMap = mappa.tileMap(options);
+  
+
+   // position = myMap.pixelToLatlng(locationData.latitude, locationData.longitude);
+   myMap.overlay(canvas) 
+
+  
+   // Only redraw the point when the map changes and not every frame.
+   myMap.onChange(drawPoint);
+   
+   //print(pos1.x, pos1.y,100,100);
+   // print(locationData.latitude);
+   //  print(locationData.longitude);
+
+}
+
+function draw(){
+  
+   frameRate(15);   // 두께 15
+   // drawPoint();
+   //Camera(100,100); 
+   //print(acos(sin(0.65565)*sin(0.65446)+cos(0.65565)*cos(0.65446)*cos(0.00087)));
+
+  
+   for(i=0;i<10;i++)      // 이미지
+   {
+      drawImage(size, size_red, gap);
+      size+=4;
+     size_red += 10;
+	 gap += 10;
+   }
+   if(size>30)
+   {
+      size=0;
+   }
+  if(size_red>40)
+   {
+      size_red=0;
+   }
+   if (gap > 10)
+   {
+		gap = 0 ;
+   }
+   
+ //print(radians(37.566));
+
+}
+
+function drawPoint(){
+  clear();  
+}
